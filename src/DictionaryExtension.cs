@@ -9,11 +9,19 @@ namespace Soenneker.Extensions.Dictionary;
 /// </summary>
 public static class DictionaryExtension
 {
+    /// <inheritdoc cref="ToFlattenedValuesList{TKey,TValue}(IDictionary{TKey,List{TValue}})"/>
+    [Pure]
+    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, IList<TValue>> value) where TKey : notnull
+    {
+        List<TValue> result = value.SelectMany(item => item.Value).ToList();
+        return result;
+    }
+
     /// <summary>
     /// Flattens all of the values in a dictionary and returns a new list with all of them
     /// </summary>
     [Pure]
-    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, IList<TValue>> value) where TKey : notnull
+    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, List<TValue>> value) where TKey : notnull
     {
         List<TValue> result = value.SelectMany(item => item.Value).ToList();
         return result;
