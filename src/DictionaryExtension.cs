@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
 
 namespace Soenneker.Extensions.Dictionary;
 
@@ -36,5 +38,25 @@ public static class DictionaryExtension
         {
             value.Add(kvp);
         }
+    }
+
+    /// <summary>
+    /// Iterates through each one of the keys in the dictionary to build a new T by looking up property names, and setting that to value of the key value pair.
+    /// </summary>
+    [Pure]
+    public static T ToObject<T>(this IDictionary<string, object> source) where T : class, new()
+    {
+        var someObject = new T();
+        Type someObjectType = someObject.GetType();
+
+        foreach (KeyValuePair<string, object> item in source)
+        {
+            PropertyInfo? property = someObjectType.GetProperty(item.Key);
+
+            if (property != null)
+                property.SetValue(someObject, item.Value, null);
+        }
+
+        return someObject;
     }
 }
