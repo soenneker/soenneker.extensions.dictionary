@@ -13,9 +13,9 @@ public static class DictionaryExtension
 {
     /// <inheritdoc cref="ToFlattenedValuesList{TKey,TValue}(IDictionary{TKey,List{TValue}})"/>
     [Pure]
-    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, IList<TValue>> value) where TKey : notnull
+    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, IList<TValue>> dictionary) where TKey : notnull
     {
-        List<TValue> result = value.SelectMany(item => item.Value).ToList();
+        List<TValue> result = dictionary.SelectMany(item => item.Value).ToList();
         return result;
     }
 
@@ -23,20 +23,20 @@ public static class DictionaryExtension
     /// Flattens all of the values in a dictionary and returns a new list with all of them
     /// </summary>
     [Pure]
-    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, List<TValue>> value) where TKey : notnull
+    public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, List<TValue>> dictionary) where TKey : notnull
     {
-        List<TValue> result = value.SelectMany(item => item.Value).ToList();
+        List<TValue> result = dictionary.SelectMany(item => item.Value).ToList();
         return result;
     }
 
     /// <summary>
     /// Loops over the target and adds each of the items into the source. Useful for readonly scenarios.
     /// </summary>
-    public static void AddDictionary<TKey, TValue>(this IDictionary<TKey, TValue> value, IDictionary<TKey, TValue> dictionary)
+    public static void AddDictionary<TKey, TValue>(this IDictionary<TKey, TValue> source, IDictionary<TKey, TValue> dictionary)
     {
         foreach (KeyValuePair<TKey, TValue> kvp in dictionary)
         {
-            value.Add(kvp);
+            source.Add(kvp);
         }
     }
 
@@ -58,5 +58,23 @@ public static class DictionaryExtension
         }
 
         return someObject;
+    }
+
+    /// <summary>
+    /// Tries to retrieve a key from a particular value in the dictionary. If there are multiple of the same value, it returns the first key.
+    /// </summary>
+    [Pure]
+    public static bool TryGetKeyFromValue<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TValue value, out TKey? result) where TValue : class
+    {
+        KeyValuePair<TKey, TValue>? kvp = dictionary.FirstOrDefault(x => x.Value == value);
+
+        if (kvp != null)
+        {
+            result = kvp.Value.Key;
+            return true;
+        }
+
+        result = default;
+        return false;
     }
 }
