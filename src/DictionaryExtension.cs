@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 
 namespace Soenneker.Extensions.Dictionary;
@@ -28,6 +29,25 @@ public static class DictionaryExtension
         List<TValue> result = dictionary.SelectMany(item => item.Value).ToList();
         return result;
     }
+
+    /// <summary>
+    /// Adds (or updates!) an enumerable to a dictionary without a loop in managed code. <para/>
+    /// Compiles the expression and loops over the enumerable, adding to the dictionary via the expression selector.
+    /// </summary>
+    /// <exception cref="ArgumentException"></exception>
+    /// <exception cref="ArgumentNullException"></exception>
+    /// <exception cref="NotSupportedException"></exception>
+    public static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> source, IEnumerable<TValue> toAdd, Expression<Func<TValue, TKey>> selector)
+    {
+        Func<TValue, TKey> compiled = selector.Compile();
+
+        foreach (TValue item in toAdd)
+        {
+            TKey? key = compiled(item);
+            source[key] = item;
+        }
+    }
+
 
     /// <summary>
     /// Loops over the target and adds each of the items into the source. Useful for readonly scenarios.

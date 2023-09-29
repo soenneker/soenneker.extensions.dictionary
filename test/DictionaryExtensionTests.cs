@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Soenneker.Tests.Unit;
 using Xunit;
@@ -24,5 +25,20 @@ public class DictionaryExtensionTests : UnitTest
         succeeded.Should().BeTrue();
 
         result.Should().Be(key);
+    }
+
+    [Fact]
+    public void AddRange_should_add_items()
+    {
+        var dictionary = new Dictionary<string, ComplexObject>();
+
+        var list = AutoFaker.Generate<List<ComplexObject>>();
+
+        dictionary.AddRange(list, c => c.Name);
+
+        ComplexObject firstItem = list.First();
+
+        dictionary[firstItem.Name].Value.Should().Be(firstItem.Value);
+        dictionary.Count.Should().Be(list.Count);
     }
 }
