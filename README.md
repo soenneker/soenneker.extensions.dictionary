@@ -8,5 +8,5 @@
 ## Installation
 
 ```
-Install-Package Soenneker.Extensions.Dictionary
+dotnet add package Soenneker.Extensions.Dictionary
 ```
