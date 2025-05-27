@@ -8,7 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.14.0" />
-    <PackageReference Include="Soenneker.Tests.Unit" Version="3.0.833" />
+    <PackageReference Include="Soenneker.Tests.Unit" Version="3.0.835" />
     <PackageReference Include="xunit.runner.visualstudio" Version="3.1.0">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>
