@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
@@ -23,10 +23,8 @@ public static class DictionaryExtension
     {
         // Pre-calculate the total capacity for the resulting list
         var totalCapacity = 0;
-        using IEnumerator<KeyValuePair<TKey, IList<TValue>>> enumerator = dictionary.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (KeyValuePair<TKey, IList<TValue>> kvp in dictionary)
         {
-            KeyValuePair<TKey, IList<TValue>> kvp = enumerator.Current;
             if (kvp.Value is not null)
                 totalCapacity += kvp.Value.Count;
         }
@@ -35,10 +33,8 @@ public static class DictionaryExtension
         var result = new List<TValue>(totalCapacity);
 
         // Populate the result list with values from the dictionary
-        using IEnumerator<KeyValuePair<TKey, IList<TValue>>> valueEnumerator = dictionary.GetEnumerator();
-        while (valueEnumerator.MoveNext())
+        foreach (KeyValuePair<TKey, IList<TValue>> kvp in dictionary)
         {
-            KeyValuePair<TKey, IList<TValue>> kvp = valueEnumerator.Current;
             if (kvp.Value is not null)
             {
                 // Add items manually to avoid calling AddRange (avoids potential overhead in large datasets)
@@ -60,10 +56,8 @@ public static class DictionaryExtension
     {
         // Pre-calculate total capacity for the resulting list
         var totalCapacity = 0;
-        using IEnumerator<KeyValuePair<TKey, List<TValue>>> enumerator = dictionary.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (KeyValuePair<TKey, List<TValue>> kvp in dictionary)
         {
-            KeyValuePair<TKey, List<TValue>> kvp = enumerator.Current;
             if (kvp.Value is not null)
                 totalCapacity += kvp.Value.Count;
         }
@@ -72,10 +66,8 @@ public static class DictionaryExtension
         var result = new List<TValue>(totalCapacity);
 
         // Populate the result list with values from the dictionary
-        using IEnumerator<KeyValuePair<TKey, List<TValue>>> valueEnumerator = dictionary.GetEnumerator();
-        while (valueEnumerator.MoveNext())
+        foreach (KeyValuePair<TKey, List<TValue>> kvp in dictionary)
         {
-            KeyValuePair<TKey, List<TValue>> kvp = valueEnumerator.Current;
             if (kvp.Value is not null)
             {
                 // Use AddRange to minimize per-item calls
@@ -98,11 +90,8 @@ public static class DictionaryExtension
     {
         Func<TValue, TKey> keySelector = selector.Compile();
 
-        using IEnumerator<TValue> enumerator = toAdd.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (TValue item in toAdd)
         {
-            TValue item = enumerator.Current;
-
             // Compute the key and add/update the dictionary
             TKey key = keySelector(item);
             source[key] = item;
@@ -115,10 +104,8 @@ public static class DictionaryExtension
     /// </summary>
     public static void AddDictionary<TKey, TValue>(this IDictionary<TKey, TValue> source, IDictionary<TKey, TValue> dictionary)
     {
-        using IEnumerator<KeyValuePair<TKey, TValue>> enumerator = dictionary.GetEnumerator();
-        while (enumerator.MoveNext())
+        foreach (KeyValuePair<TKey, TValue> kvp in dictionary)
         {
-            KeyValuePair<TKey, TValue> kvp = enumerator.Current;
             source[kvp.Key] = kvp.Value; // Adds or updates the key-value pair
         }
     }
@@ -134,8 +121,10 @@ public static class DictionaryExtension
         Type someObjectType = typeof(T);
 
         // Cache the properties for the type
-        var properties = new Dictionary<string, PropertyInfo>(StringComparer.OrdinalIgnoreCase);
-        foreach (PropertyInfo property in someObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance))
+        PropertyInfo[] allProperties = someObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        // Pre-allocate dictionary capacity
+        var properties = new Dictionary<string, PropertyInfo>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
+        foreach (PropertyInfo property in allProperties)
         {
             if (property.CanWrite) // Only consider writable properties
             {
@@ -143,13 +132,9 @@ public static class DictionaryExtension
             }
         }
 
-        // Iterate through the dictionary using an enumerator
-        using IEnumerator<KeyValuePair<string, object>> enumerator = source.GetEnumerator();
-
-        while (enumerator.MoveNext())
+        // Iterate through the dictionary
+        foreach (KeyValuePair<string, object> item in source)
         {
-            KeyValuePair<string, object> item = enumerator.Current;
-
             if (!properties.TryGetValue(item.Key, out PropertyInfo? property))
                 continue;
 
@@ -190,14 +175,9 @@ public static class DictionaryExtension
     [Pure]
     public static bool TryGetKeyFromValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TValue value, out TKey? result) where TValue : class
     {
-        // Get the enumerator for the dictionary
-        using IEnumerator<KeyValuePair<TKey, TValue>> enumerator = dictionary.GetEnumerator();
-
-        // Iterate using the enumerator
-        while (enumerator.MoveNext())
+        // Iterate through the dictionary
+        foreach (KeyValuePair<TKey, TValue> kvp in dictionary)
         {
-            KeyValuePair<TKey, TValue> kvp = enumerator.Current;
-
             // Check for matching value using reference equality first, then value equality
             if (ReferenceEquals(kvp.Value, value) || (kvp.Value?.Equals(value) ?? false))
             {
