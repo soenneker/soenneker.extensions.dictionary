@@ -14,7 +14,7 @@
   <ItemGroup><PackageReference Include="Soenneker.Tests.Unit" Version="4.0.1084" /><PackageReference Include="xUnit.v3" Version="3.2.2" /></ItemGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\src\Soenneker.Extensions.Dictionary.csproj" />
+        <ProjectReference Include="..\..\src\Soenneker.Extensions.Dictionary\Soenneker.Extensions.Dictionary.csproj" />
     </ItemGroup>
 
     <ItemGroup>
