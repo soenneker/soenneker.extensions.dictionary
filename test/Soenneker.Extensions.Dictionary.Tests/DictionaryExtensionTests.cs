@@ -1,14 +1,13 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Linq;
 using AwesomeAssertions;
 using Soenneker.Tests.Unit;
-using Xunit;
 
 namespace Soenneker.Extensions.Dictionary.Tests;
 
 public class DictionaryExtensionTests : UnitTest
 {
-    [Fact]
+    [Test]
     public void TryGetValueFromKey_should_get_value()
     {
         string value = Faker.Random.AlphaNumeric(5);
@@ -27,7 +26,7 @@ public class DictionaryExtensionTests : UnitTest
         result.Should().Be(key);
     }
 
-    [Fact]
+    [Test]
     public void AddRange_should_add_items()
     {
         var dictionary = new Dictionary<string, ComplexObject>();
