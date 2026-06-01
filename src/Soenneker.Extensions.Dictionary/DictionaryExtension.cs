@@ -2,7 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
-using System.Reflection;
+using Soenneker.Reflection.Cache;
+using Soenneker.Reflection.Cache.Properties;
+using Soenneker.Reflection.Cache.Types;
 
 namespace Soenneker.Extensions.Dictionary;
 
@@ -11,6 +13,8 @@ namespace Soenneker.Extensions.Dictionary;
 /// </summary>
 public static class DictionaryExtension
 {
+    private static readonly ReflectionCache _reflectionCache = new();
+
     /// <summary>
     /// Flattens the values of a dictionary, where each key maps to a list of values, into a single list.
     /// </summary>
@@ -118,35 +122,31 @@ public static class DictionaryExtension
     {
         // Create an instance of the target type
         var someObject = new T();
-        Type someObjectType = typeof(T);
 
         // Cache the properties for the type
-        PropertyInfo[] allProperties = someObjectType.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+        CachedType cachedType = _reflectionCache.GetCachedType(typeof(T));
+        CachedProperty[] allProperties = cachedType.GetCachedProperties()!;
+
         // Pre-allocate dictionary capacity
-        var properties = new Dictionary<string, PropertyInfo>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
-        foreach (PropertyInfo property in allProperties)
+        var properties = new Dictionary<string, CachedProperty>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
+
+        for (var i = 0; i < allProperties.Length; i++)
         {
-            if (property.CanWrite) // Only consider writable properties
-            {
-                properties[property.Name] = property;
-            }
+            CachedProperty property = allProperties[i];
+            properties[property.PropertyInfo.Name] = property;
         }
 
         // Iterate through the dictionary
         foreach (KeyValuePair<string, object> item in source)
         {
-            if (!properties.TryGetValue(item.Key, out PropertyInfo? property))
+            if (!properties.TryGetValue(item.Key, out CachedProperty? property))
                 continue;
 
-            // Attempt to set the value if types match or can be converted
-            if (item.Value is null || property.PropertyType.IsInstanceOfType(item.Value))
-            {
-                property.SetValue(someObject, item.Value);
-            }
-            else if (TryConvertValue(item.Value, property.PropertyType, out object? convertedValue))
-            {
-                property.SetValue(someObject, convertedValue);
-            }
+            if (property.TrySetValue(someObject, item.Value))
+                continue;
+
+            if (item.Value is not null && TryConvertValue(item.Value, property.PropertyInfo.PropertyType, out object? convertedValue))
+                property.TrySetValue(someObject, convertedValue);
         }
 
         return someObject;

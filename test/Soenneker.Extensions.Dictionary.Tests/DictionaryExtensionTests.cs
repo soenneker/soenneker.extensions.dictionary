@@ -40,4 +40,26 @@ public class DictionaryExtensionTests : UnitTest
         dictionary[firstItem.Name].Value.Should().Be(firstItem.Value);
         dictionary.Count.Should().Be(list.Count);
     }
+
+    [Test]
+    public void ToObject_should_set_properties()
+    {
+        var dictionary = new Dictionary<string, object>
+        {
+            {nameof(ToObjectTarget.Name), "Jane"},
+            {nameof(ToObjectTarget.Age), "42"}
+        };
+
+        ToObjectTarget result = dictionary.ToObject<ToObjectTarget>();
+
+        result.Name.Should().Be("Jane");
+        result.Age.Should().Be(42);
+    }
+
+    private sealed class ToObjectTarget
+    {
+        public string? Name { get; set; }
+
+        public int Age { get; set; }
+    }
 }
