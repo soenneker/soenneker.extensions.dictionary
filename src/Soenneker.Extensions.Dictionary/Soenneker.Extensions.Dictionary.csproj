@@ -42,6 +42,6 @@
     </ItemGroup>
 
     <ItemGroup>
-        <PackageReference Include="Soenneker.Reflection.Cache" Version="4.0.630" />
+        <PackageReference Include="Soenneker.Reflection.Cache" Version="4.0.631" />
     </ItemGroup>
 </Project>
