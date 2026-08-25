@@ -92,7 +92,18 @@ public static class DictionaryExtension
     /// <exception cref="NotSupportedException"></exception>
     public static void AddRange<TKey, TValue>(this IDictionary<TKey, TValue> source, IEnumerable<TValue> toAdd, Expression<Func<TValue, TKey>> selector)
     {
-        Func<TValue, TKey> keySelector = selector.Compile();
+        ArgumentNullException.ThrowIfNull(selector);
+        source.AddRangeCompiled(toAdd, selector.Compile());
+    }
+
+    /// <summary>
+    /// Adds or updates values using a precompiled key selector. Prefer this overload in repeated or hot paths.
+    /// </summary>
+    public static void AddRangeCompiled<TKey, TValue>(this IDictionary<TKey, TValue> source, IEnumerable<TValue> toAdd, Func<TValue, TKey> keySelector)
+    {
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(toAdd);
+        ArgumentNullException.ThrowIfNull(keySelector);
 
         foreach (TValue item in toAdd)
         {
@@ -123,18 +134,7 @@ public static class DictionaryExtension
         // Create an instance of the target type
         var someObject = new T();
 
-        // Cache the properties for the type
-        CachedType cachedType = _reflectionCache.GetCachedType(typeof(T));
-        CachedProperty[] allProperties = cachedType.GetCachedProperties()!;
-
-        // Pre-allocate dictionary capacity
-        var properties = new Dictionary<string, CachedProperty>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
-
-        for (var i = 0; i < allProperties.Length; i++)
-        {
-            CachedProperty property = allProperties[i];
-            properties[property.PropertyInfo.Name] = property;
-        }
+        Dictionary<string, CachedProperty> properties = PropertyMap<T>.Value;
 
         // Iterate through the dictionary
         foreach (KeyValuePair<string, object> item in source)
@@ -150,6 +150,26 @@ public static class DictionaryExtension
         }
 
         return someObject;
+    }
+
+    private static class PropertyMap<T> where T : class, new()
+    {
+        internal static readonly Dictionary<string, CachedProperty> Value = Create();
+
+        private static Dictionary<string, CachedProperty> Create()
+        {
+            CachedType cachedType = _reflectionCache.GetCachedType(typeof(T));
+            CachedProperty[] allProperties = cachedType.GetCachedProperties()!;
+            var properties = new Dictionary<string, CachedProperty>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
+
+            for (var i = 0; i < allProperties.Length; i++)
+            {
+                CachedProperty property = allProperties[i];
+                properties[property.PropertyInfo.Name] = property;
+            }
+
+            return properties;
+        }
     }
 
     /// <summary>
