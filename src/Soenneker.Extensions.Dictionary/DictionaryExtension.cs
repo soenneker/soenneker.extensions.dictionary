@@ -55,6 +55,7 @@ public static class DictionaryExtension
     /// <summary>
     /// Flattens all of the values in a dictionary and returns a new list with all of them
     /// </summary>
+    /// <returns>Flattens all of the values in a dictionary and returns a new list with all of them.</returns>
     [Pure]
     public static List<TValue> ToFlattenedValuesList<TKey, TValue>(this IDictionary<TKey, List<TValue>> dictionary) where TKey : notnull
     {
@@ -128,6 +129,7 @@ public static class DictionaryExtension
     /// <summary>
     /// Iterates through each one of the keys in the dictionary to build a new T by looking up property names, and setting that to value of the key value pair.
     /// </summary>
+    /// <returns>Iterates through each one of the keys in the dictionary to build a new T by looking up property names, and setting that to value of the key value pair.</returns>
     [Pure]
     public static T ToObject<T>(this IDictionary<string, object> source) where T : class, new()
     {
@@ -192,6 +194,7 @@ public static class DictionaryExtension
     /// <summary>
     /// Tries to retrieve a key from a particular value in the dictionary. If there are multiple of the same value, it returns the first key.
     /// </summary>
+    /// <returns>Tries to retrieve a key from a particular value in the dictionary. If there are multiple of the same value, it returns the first key.</returns>
     [Pure]
     public static bool TryGetKeyFromValue<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TValue value, out TKey? result) where TValue : class
     {
