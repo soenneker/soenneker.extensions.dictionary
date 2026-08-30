@@ -85,8 +85,7 @@ public static class DictionaryExtension
 
 
     /// <summary>
-    /// Adds (or updates!) an enumerable to a dictionary without a loop in managed code. <para/>
-    /// Compiles the expression and loops over the enumerable, adding to the dictionary via the expression selector.
+    /// Adds or updates values by compiling the supplied key selector once for this call.
     /// </summary>
     /// <exception cref="ArgumentException"></exception>
     /// <exception cref="ArgumentNullException"></exception>
@@ -184,7 +183,17 @@ public static class DictionaryExtension
             convertedValue = Convert.ChangeType(value, targetType);
             return true;
         }
-        catch
+        catch (InvalidCastException)
+        {
+            convertedValue = null;
+            return false;
+        }
+        catch (FormatException)
+        {
+            convertedValue = null;
+            return false;
+        }
+        catch (OverflowException)
         {
             convertedValue = null;
             return false;
