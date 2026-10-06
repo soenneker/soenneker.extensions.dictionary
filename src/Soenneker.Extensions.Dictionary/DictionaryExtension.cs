@@ -2,9 +2,8 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
-using Soenneker.Reflection.Cache;
-using Soenneker.Reflection.Cache.Properties;
-using Soenneker.Reflection.Cache.Types;
+using System.Diagnostics.CodeAnalysis;
+using System.Reflection;
 
 namespace Soenneker.Extensions.Dictionary;
 
@@ -13,7 +12,6 @@ namespace Soenneker.Extensions.Dictionary;
 /// </summary>
 public static class DictionaryExtension
 {
-    private static readonly ReflectionCache _reflectionCache = new();
 
     /// <summary>
     /// Flattens the values of a dictionary, where each key maps to a list of values, into a single list.
@@ -130,47 +128,45 @@ public static class DictionaryExtension
     /// </summary>
     /// <returns>Iterates through each one of the keys in the dictionary to build a new T by looking up property names, and setting that to value of the key value pair.</returns>
     [Pure]
-    public static T ToObject<T>(this IDictionary<string, object> source) where T : class, new()
+    public static T ToObject<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicProperties)] T>(this IDictionary<string, object> source) where T : class, new()
     {
         // Create an instance of the target type
         var someObject = new T();
 
-        Dictionary<string, CachedProperty> properties = PropertyMap<T>.Value;
+        Dictionary<string, PropertyInfo> properties = DictionaryPropertyMap<T>.Value;
 
         // Iterate through the dictionary
         foreach (KeyValuePair<string, object> item in source)
         {
-            if (!properties.TryGetValue(item.Key, out CachedProperty? property))
+            if (!properties.TryGetValue(item.Key, out PropertyInfo? property))
                 continue;
 
-            if (property.TrySetValue(someObject, item.Value))
-                continue;
-
-            if (item.Value is not null && TryConvertValue(item.Value, property.PropertyInfo.PropertyType, out object? convertedValue))
-                property.TrySetValue(someObject, convertedValue);
+            Type propertyType = property.PropertyType;
+            object? value = item.Value;
+            if (value is null)
+            {
+                if (!propertyType.IsValueType || Nullable.GetUnderlyingType(propertyType) is not null)
+                    property.SetValue(someObject, null, BindingFlags.DoNotWrapExceptions, null, null, null);
+            }
+            else if (propertyType.IsInstanceOfType(value))
+                property.SetValue(someObject, value, BindingFlags.DoNotWrapExceptions, null, null, null);
+            else if (TryConvertValue(value, propertyType, out object? convertedValue))
+                property.SetValue(someObject, convertedValue, BindingFlags.DoNotWrapExceptions, null, null, null);
         }
 
         return someObject;
     }
 
-    private static class PropertyMap<T> where T : class, new()
+    /// <summary>Maps dictionary entries with explicit setters, without discovering model members.</summary>
+    public static T ToObject<T>(this IDictionary<string, object> source, IReadOnlyDictionary<string, Action<T, object?>> setters) where T : class, new()
     {
-        internal static readonly Dictionary<string, CachedProperty> Value = Create();
-
-        private static Dictionary<string, CachedProperty> Create()
-        {
-            CachedType cachedType = _reflectionCache.GetCachedType(typeof(T));
-            CachedProperty[] allProperties = cachedType.GetCachedProperties()!;
-            var properties = new Dictionary<string, CachedProperty>(allProperties.Length, StringComparer.OrdinalIgnoreCase);
-
-            for (var i = 0; i < allProperties.Length; i++)
-            {
-                CachedProperty property = allProperties[i];
-                properties[property.PropertyInfo.Name] = property;
-            }
-
-            return properties;
-        }
+        ArgumentNullException.ThrowIfNull(source);
+        ArgumentNullException.ThrowIfNull(setters);
+        var result = new T();
+        foreach (KeyValuePair<string, object> entry in source)
+            if (setters.TryGetValue(entry.Key, out Action<T, object?>? setter))
+                setter(result, entry.Value);
+        return result;
     }
 
     /// <summary>
